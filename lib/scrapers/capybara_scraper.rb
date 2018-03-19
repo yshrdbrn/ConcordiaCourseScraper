@@ -1,7 +1,7 @@
 require 'capybara/poltergeist'
 require 'capybara'
 require 'capybara/dsl'
-require 'byebug'
+
 Capybara.run_server = false
 Capybara.current_driver = :poltergeist
 Capybara.app_host = 'https://fcms.concordia.ca/'
@@ -11,6 +11,7 @@ class CapybaraScraper
   include Capybara::DSL
   def get_results(course_code, term)
     visit '/fcms/asc002_stud_all.aspx'
+    puts "Page loaded"
     select_term(term)
     fill_course(course_code)
     submit
@@ -18,7 +19,8 @@ class CapybaraScraper
   end
 
   def submit
-    click_on 'Search'
+    click_button 'Search'
+    puts "Clicked on submit"
     page_state
     begin
       find('#CLASS_SRCH_WRK2_SSR_PB_MODIFY')
@@ -35,11 +37,16 @@ class CapybaraScraper
       raise TooManyClassesError, 'Too many Classes' if page.text =~ /maximum limit of 300 sections/
       raise NoMatchError, 'No match for code' if page.text =~ /no results that match the criteria specified/
       if page.text =~ /over 100 classes/
+        puts "over 100 classes"
         click_on 'OK'
         state_found = true
+      elsif page.text =~ /Enter Search Criteria below/
+        puts "Search click"
+        click_on 'Search'
       elsif page.text =~ /Search Results/
         state_found = true
-      elsif Time.now - start_time > 10
+      elsif Time.now - start_time > 20
+        puts "error generated"
         page.save_screenshot("errors/error_#{Time.now.to_f.to_s.gsub('.', '')}.png")
         raise StateError, 'State Finding timeout.'
       end

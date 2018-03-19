@@ -2,7 +2,7 @@ require 'selenium-webdriver'
 require_relative './fcms_scraper'
 
 class SeleniumScraper
-  def start
+  def initialize
     @driver = Selenium::WebDriver.for :chrome
     @driver.navigate.to 'https://campus.concordia.ca/psc/pscsprd/EMPLOYEE/HRMS/c/CU_EXT.CU_CLASS_SEARCH.GBL'
   end

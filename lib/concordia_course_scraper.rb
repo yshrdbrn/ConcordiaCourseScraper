@@ -2,6 +2,7 @@ require_relative './models/semester_list'
 require_relative './models/course_list'
 require_relative './scrapers/capybara_scraper'
 require_relative './scrapers/fcms_scraper'
+require_relative './scrapers/selenium_scraper'
 require_relative './data_writers/csv_writer'
 
 class ConcordiaCourseScraper
@@ -11,37 +12,37 @@ class ConcordiaCourseScraper
     @course_list = CourseList.new(data_writer: @data_writer)
     @semester_list = SemesterList.new(data_writer: @data_writer)
     @section_list = []
-    @scraper = CapybaraScraper.new
+    @scraper = SeleniumScraper.new
     @fcms_scraper = FcmsScraper.new(
       course_list: @course_list,
       semester_list: @semester_list,
       section_list: @section_list,
       data_writer: @data_writer
     )
-    if options[:course_codes] == 'ALL'
-      @course_codes = File.open('./course_codes.txt').readlines.map(&:chomp)
-    else
+    if options[:course_codes] == 'SHORT'
       @course_codes = File.open('./course_codes_short.txt').readlines.map(&:chomp)
+    else
+      @course_codes = File.open('./course_codes.txt').readlines.map(&:chomp)
     end
   end
 
-  def extract_all(year_code = 216)
+  def extract_all(year_code = 217)
     @course_codes.each do |course_code|
       begin
-        extract(course_code, year_code)
+        extract(course_code, "#{year_code}2")
       rescue TooManyClassesError
         begin
+#          extract(course_code, "#{year_code}2")
           extract(course_code, "#{year_code}2")
-          extract(course_code, "#{year_code}4")
         rescue NoMatchError
           puts "#{course_code} has no classes in #{year_code}"
         rescue StateError
-          puts "State Error when parsing #{course_code} in #{year_code}"
+          puts "1State Error when parsing #{course_code} in #{year_code}"
         end
       rescue NoMatchError
         puts "#{course_code} has no classes in #{year_code}"
       rescue StateError
-        puts "State Error when parsing #{course_code} in #{year_code}"
+        puts "2State Error when parsing #{course_code} in #{year_code}"
       end
     end
   end
@@ -53,14 +54,14 @@ class ConcordiaCourseScraper
   ##
   # Extracts course information for the given course code, during the course
   # year. Year_code format is 2XXY, where XX are the 2 last digits of the year,
-  # and Y is optionally the semester number, Winter is 2, Fall is 4
+  # and Y is optionally the semester number, Winter is 4, Fall is 2
   ##
-  def extract_single(course_code, year_code = 216)
+  def extract_single(course_code, year_code = 217)
     begin
       extract(course_code, year_code)
     rescue TooManyClassesError
+#      extract(course_code, "#{year_code}2")
       extract(course_code, "#{year_code}2")
-      extract(course_code, "#{year_code}4")
     rescue Exception => e
       puts e.backtrace
     end
